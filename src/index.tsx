@@ -82,6 +82,11 @@ const App = () => {
     setTodos(newTodos)
   }
 
+  const handleOnEmpty = () => {
+    const newTodos = todos.filter((todo) => !todo.removed)
+    setTodos(newTodos)
+  }
+
   return (
     <div>
       <select defaultValue="all" onChange={(e) => {setFilter(e.target.value as Filter)}}>
@@ -90,20 +95,27 @@ const App = () => {
         <option value="unchecked">未完了のタスク</option>
         <option value="removed">削除済みのタスク</option>
       </select>
-      <form onSubmit={(e) => handleOnSubmit(e)}>
-        <input
-          disabled={filter === 'checked' || filter === 'removed'}
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <input
-          disabled={filter === 'checked' || filter === 'removed'}
-          type="submit"
-          value="追加"
-          onSubmit={(e) => handleOnSubmit(e)}
-        />
-      </form>
+      {
+        filter === 'removed'
+        ? <button
+            disabled={todos.filter((todo) => todo.removed).length === 0}
+            onClick={() => handleOnEmpty()}>ゴミ箱を空にする
+          </button>
+        : <form onSubmit={(e) => handleOnSubmit(e)}>
+          <input
+            disabled={filter === 'checked'}
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <input
+            disabled={filter === 'checked'}
+            type="submit"
+            value="追加"
+            onSubmit={(e) => handleOnSubmit(e)}
+          />
+        </form>
+      }
       <ul>
         {filteredTodos.map((todo) => {
           return (
