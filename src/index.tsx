@@ -1,4 +1,10 @@
-import React, { useReducer, memo, Dispatch} from 'react';
+import React, {
+  useReducer, 
+  memo, 
+  Dispatch,
+  createContext,
+  useContext,
+} from 'react';
 import ReactDOM from 'react-dom';
 
 interface Todo {
@@ -88,8 +94,15 @@ const reducer = (state: State, action: Action): State => {
   }
 }
 
-const Selector: React.VFC<{dispatch: Dispatch<Action>}> = memo(
-  ({dispatch}) => {
+const AppContext = createContext({} as {
+  state: State
+  dispatch: Dispatch<Action>
+})
+
+const Selector = memo(
+  () => {
+    const { dispatch } = useContext(AppContext)
+
     const handleOnFilter = (value: Filter) => {
       dispatch({type: 'filter', value})
     }
@@ -106,8 +119,10 @@ const Selector: React.VFC<{dispatch: Dispatch<Action>}> = memo(
 )
 Selector.displayName = 'Selector'
 
-const EmptyButton: React.VFC<{ dispatch: Dispatch<Action> }> = memo(
-  ({dispatch}) => {
+const EmptyButton = memo(
+  () => {
+    const { dispatch } = useContext(AppContext)
+
     const handleOnEmpty = () => {
       dispatch({type: 'empty'})
     }
@@ -120,8 +135,10 @@ const EmptyButton: React.VFC<{ dispatch: Dispatch<Action> }> = memo(
 )
 EmptyButton.displayName = 'EmptyButton'
 
-const Form: React.VFC<{ state: State; dispatch: Dispatch<Action> }> = memo(
-  ({state, dispatch}) => {
+const Form = memo(
+  () => {
+    const {state, dispatch} = useContext(AppContext)
+
     const handleOnSubmit = (e: React.FormEvent<HTMLFormElement | HTMLInputElement>) => {
       e.preventDefault()
       dispatch({type: 'submit'})
@@ -154,8 +171,10 @@ const Form: React.VFC<{ state: State; dispatch: Dispatch<Action> }> = memo(
 )
 Form.displayName = 'Form'
 
-const FilteredTodos: React.VFC<{ state: State, dispatch: Dispatch<Action> }> = memo(
-  ({state, dispatch}) => {
+const FilteredTodos = memo(
+  () => {
+    const { state, dispatch } = useContext(AppContext)
+    
     const handleOnEdit = (id: number, value: string) => {
       dispatch({type: 'edit', id, value})
     }
@@ -204,15 +223,17 @@ const App = () => {
   const [state, dispatch] = useReducer(reducer, inisialState)
 
   return (
-    <div>
-      <Selector dispatch={dispatch} />
-      {state.filter === 'removed' ? (
-        <EmptyButton dispatch={dispatch}/>
-      ) : (
-        <Form state={state} dispatch={dispatch}/>
-      )}
-      <FilteredTodos state={state} dispatch={dispatch} />
-    </div>
+    <AppContext.Provider value={{state, dispatch}}>
+      <div className="container">
+        <Selector />
+        {state.filter === 'removed' ? (
+          <EmptyButton/>
+        ) : (
+          <Form />
+        )}
+        <FilteredTodos />
+      </div>
+    </AppContext.Provider>
   )
 }
 
