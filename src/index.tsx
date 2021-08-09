@@ -34,6 +34,11 @@ const App = () => {
         <input type="text" value={text} onChange={(e) => setText(e.target.value)} />
         <input type="submit" value="追加" onSubmit={(e) => handleOnSubmit(e)} />
       </form>
+      <ul>
+        {todos.map((todo) => {
+          return <li>{todo.value}</li>
+        })}
+      </ul>
     </div>
   )
 }
