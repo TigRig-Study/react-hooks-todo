@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useReducer} from 'react';
 import ReactDOM from 'react-dom';
 
 interface Todo {
@@ -10,13 +10,89 @@ interface Todo {
 
 type Filter = 'all' | 'checked' | 'unchecked' | 'removed'
 
-const App = () => {
-  const [text, setText] = useState('')
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [filter, setFilter] = useState<Filter>('all')
+interface State {
+  text: string
+  todos: Todo[]
+  filter: Filter
+}
 
-  const filteredTodos = todos.filter((todo) => {
-    switch(filter) {
+type Action = 
+  | {type: 'change'; value: string}
+  | {type: 'filter'; value: Filter}
+  | {type: 'submit'}
+  | {type: 'empty'}
+  | {type: 'edit'; id: number; value: string}
+  | {type: 'check'; id: number; checked: boolean}
+  | {type: 'remove'; id: number;}
+
+const inisialState: State = {
+  text: '',
+  todos: [],
+  filter: 'all',
+}
+
+const reducer = (state: State, action: Action): State => {
+  switch(action.type) {
+    case 'change':
+      return {...state, text: action.value}
+    case 'submit': {
+      // 何も入力されていなかったらリターン
+      if(!state.text) return state
+  
+      // 新しい Todo を作成
+      const newTodo: Todo = {
+        value: state.text,
+        id: new Date().getTime(),
+        checked: false,
+        removed: false,
+      }
+
+      return {...state, todos: [newTodo, ...state.todos], text: ''}
+    }
+    case 'edit': {
+      const newTodos = state.todos.map((todo) => {
+        if(todo.id === action.id) {
+          todo.value = action.value
+        }
+        return todo
+      })
+      return {...state, todos: newTodos}
+    }
+    case 'check': {
+      const newTodos = state.todos.map((todo) => {
+        if(todo.id === action.id) {
+          todo.checked = action.checked
+        }
+        return todo
+      })
+      return {...state, todos: newTodos}
+    }
+    case 'remove': {
+      const newTodos = state.todos.map((todo) => {
+        if(todo.id === action.id) {
+          todo.removed = !todo.removed
+        }
+        return todo
+      })
+      return {...state, todos: newTodos}
+    }
+    case 'empty': {
+      const newTodos = state.todos.filter((todo) => !todo.removed)
+      return {...state, todos: newTodos}
+    }
+    case 'filter': {
+      return {...state, filter: action.value}
+    }
+    default:
+      return state;
+  }
+}
+
+const App = () => {
+  const [state, dispatch] = useReducer(reducer, inisialState)
+
+  const filteredTodos = state.todos.filter((todo) => {
+    switch(state.filter) {
       case 'all':
         return !todo.removed
       case 'checked':
@@ -30,86 +106,59 @@ const App = () => {
     }
   })
 
+  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    dispatch({type: 'change', value: e.target.value})
+  }
+
   const handleOnSubmit = (e: React.FormEvent<HTMLFormElement | HTMLInputElement>) => {
     e.preventDefault()
-
-    // 何も入力されていなかったらリターン
-    if(!text) return
-
-    // 新しい Todo を作成
-    const newTodo: Todo = {
-      value: text,
-      id: new Date().getTime(),
-      checked: false,
-      removed: false,
-    }
-
-    // イミュータブル な操作を行うため、 todos 自体を更新せず、
-    // todos のコピー ＋ newTodo を setTodos する
-    setTodos([...todos, newTodo])
-
-    // フォームの入力をクリア
-    setText('')
+    dispatch({type: 'submit'})
   }
 
   const handleOnEdit = (id: number, value: string) => {
-    const newTodos = todos.map((todo) => {
-      if(todo.id === id) {
-        todo.value = value
-      }
-      return todo
-    })
-    setTodos(newTodos)
+    dispatch({type: 'edit', id, value})
   }
 
   const handleOnCheck = (id: number, checked: boolean) => {
-    const newTodos = todos.map((todo) => {
-      if(todo.id === id) {
-        todo.checked = checked
-      }
-      return todo
-    })
-    setTodos(newTodos)
+    dispatch({type: 'check', id, checked})
   }
 
   const handleOnRemove = (id: number) => {
-    const newTodos = todos.map((todo) => {
-      if(todo.id === id) {
-        todo.removed = !todo.removed
-      }
-      return todo
-    })
-    setTodos(newTodos)
+    dispatch({type: 'remove', id})
   }
 
   const handleOnEmpty = () => {
-    const newTodos = todos.filter((todo) => !todo.removed)
-    setTodos(newTodos)
+    dispatch({type: 'empty'})
+  }
+
+  const handleOnFilter = (value: Filter) => {
+    dispatch({type: 'filter', value})
   }
 
   return (
     <div>
-      <select defaultValue="all" onChange={(e) => {setFilter(e.target.value as Filter)}}>
+      <select defaultValue="all" onChange={(e) => {handleOnFilter(e.target.value as Filter)}}>
         <option value="all">すべてのタスク</option>
         <option value="checked">完了したタスク</option>
         <option value="unchecked">未完了のタスク</option>
         <option value="removed">削除済みのタスク</option>
       </select>
       {
-        filter === 'removed'
+        state.filter === 'removed'
         ? <button
-            disabled={todos.filter((todo) => todo.removed).length === 0}
+            disabled={state.todos.filter((todo) => todo.removed).length === 0}
             onClick={() => handleOnEmpty()}>ゴミ箱を空にする
           </button>
         : <form onSubmit={(e) => handleOnSubmit(e)}>
           <input
-            disabled={filter === 'checked'}
+            disabled={state.filter === 'checked'}
             type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
+            value={state.text}
+            onChange={(e) => handleOnChange(e)}
           />
           <input
-            disabled={filter === 'checked'}
+            disabled={state.filter === 'checked'}
             type="submit"
             value="追加"
             onSubmit={(e) => handleOnSubmit(e)}
