@@ -5,6 +5,7 @@ interface Todo {
   value: string
   id: number
   checked: boolean
+  removed: boolean
 }
 
 const App = () => {
@@ -21,7 +22,8 @@ const App = () => {
     const newTodo: Todo = {
       value: text,
       id: new Date().getTime(),
-      checked: false
+      checked: false,
+      removed: false,
     }
 
     // イミュータブル な操作を行うため、 todos 自体を更新せず、
@@ -52,6 +54,16 @@ const App = () => {
     setTodos(newTodos)
   }
 
+  const handleOnRemove = (id: number) => {
+    const newTodos = todos.map((todo) => {
+      if(todo.id === id) {
+        todo.removed = !todo.removed
+      }
+      return todo
+    })
+    setTodos(newTodos)
+  }
+
   return (
     <div>
       <form onSubmit={(e) => handleOnSubmit(e)}>
@@ -62,8 +74,9 @@ const App = () => {
         {todos.map((todo) => {
           return (
             <li key={todo.id}>
-              <input type="checkbox" checked={todo.checked} onChange={(e) => handleOnCheck(todo.id, e.target.checked)}/>
-              <input disabled={todo.checked} type="text" value={todo.value} onChange={(e) => handleOnEdit(todo.id, e.target.value)} />
+              <input disabled={todo.removed} type="checkbox" checked={todo.checked} onChange={(e) => handleOnCheck(todo.id, e.target.checked)}/>
+              <input disabled={todo.checked || todo.removed} type="text" value={todo.value} onChange={(e) => handleOnEdit(todo.id, e.target.value)} />
+              <button onClick={() => handleOnRemove(todo.id)}>{todo.removed ? '復元' : '削除'}</button>
             </li>
           )
         })}
