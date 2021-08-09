@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 
 interface Todo {
   value: string
+  id: number
 }
 
 const App = () => {
@@ -17,7 +18,8 @@ const App = () => {
 
     // 新しい Todo を作成
     const newTodo: Todo = {
-      value: text
+      value: text,
+      id: new Date().getTime()
     }
 
     // イミュータブル な操作を行うため、 todos 自体を更新せず、
@@ -36,7 +38,7 @@ const App = () => {
       </form>
       <ul>
         {todos.map((todo) => {
-          return <li>{todo.value}</li>
+          return <li key={todo.id}>{todo.value}</li>
         })}
       </ul>
     </div>
