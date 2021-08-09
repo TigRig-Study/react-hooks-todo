@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 interface Todo {
   value: string
   id: number
+  checked: boolean
 }
 
 const App = () => {
@@ -19,7 +20,8 @@ const App = () => {
     // 新しい Todo を作成
     const newTodo: Todo = {
       value: text,
-      id: new Date().getTime()
+      id: new Date().getTime(),
+      checked: false
     }
 
     // イミュータブル な操作を行うため、 todos 自体を更新せず、
@@ -40,6 +42,16 @@ const App = () => {
     setTodos(newTodos)
   }
 
+  const handleOnCheck = (id: number, checked: boolean) => {
+    const newTodos = todos.map((todo) => {
+      if(todo.id === id) {
+        todo.checked = checked
+      }
+      return todo
+    })
+    setTodos(newTodos)
+  }
+
   return (
     <div>
       <form onSubmit={(e) => handleOnSubmit(e)}>
@@ -50,7 +62,8 @@ const App = () => {
         {todos.map((todo) => {
           return (
             <li key={todo.id}>
-              <input type="text" value={todo.value} onChange={(e) => handleOnEdit(todo.id, e.target.value)} />
+              <input type="checkbox" checked={todo.checked} onChange={(e) => handleOnCheck(todo.id, e.target.checked)}/>
+              <input disabled={todo.checked} type="text" value={todo.value} onChange={(e) => handleOnEdit(todo.id, e.target.value)} />
             </li>
           )
         })}
